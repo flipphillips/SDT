@@ -1,13 +1,18 @@
 (* ::Package:: *)
+
+(* ::Section:: *)
+(*SDT*)
+
+
 (* :Title: Signal Detection Tools *)
 (* :Context: SDT` *)
 (* :Author: Flip Phillips, OSU, Skidmore College *)
 (* :Summary: 
 	This package provides various signal detection theory function to Mathematica.
 *)
-(* :Package Version: $Revision: 26 $ *)
+(* :Package Version: $Revision: 28 $ *)
 (* :Mathematica Version: 8.0+ *)
-(* :Copyright: Copyright 1999-2011, Flip Phillips, All Rights Reserved.  *)
+(* :Copyright: Copyright 1999-2017, Flip Phillips, All Rights Reserved.  *)
 (* :History: *)
 (* :Keywords: *)
 (* :Limitations: 
@@ -21,9 +26,17 @@
  	Smith, J. E. Keith (1982). Simple Algorithms for M-Alternative Forced Choice, P&P.
 *)
 
+
+(* ::Text:: *)
+(*LR+ = sensitivity / (1-specificity) = (a/(a+c)) / (b/(b+d))*)
+(*LR- = (1-sensitivity) / specificity = (c/(a+c)) / (d/(b+d))*)
+(*Post-test odds = pre-test odds * LR*)
+(*Pre-test odds = pre-test probability / (1-pre-test probability)*)
+(*Post-test probability = post-test odds / (post test odds+1)*)
+
+
 BeginPackage["SDT`"]
 
-(* usages *)
 
 DPrime::usage=
 "DPrime[h,f,opts] computes sensitivity as \!\(\*SuperscriptBox[\(d\), \(\[Prime]\)]\) for a hit rate H and false-alarm rate F.
@@ -36,27 +49,34 @@ LogAlpha::usage=
 "LogAlpha[h,f,opts] computes sensitivity as log(\[Alpha]) for a hit rate H and false-alarm rate F
 LogAlpha[pc,opts] computes sensitivity as log(\[Alpha]) for a p(c).";
 
+
 Criterion::usage="Criterion[h,f,opts] Computes C for a hit rate H and false-alarm rate F. For SameDifferent designs you need to call it with its matrix form - ala Criterion[m,opts].";
+
 
 ROC::usage="ROC[dprime,f,opts] Computer the ROC curve location for a given \!\(\*SuperscriptBox[\(d\), \(\[Prime]\)]\) and false-alarm rate.";
 (* PlotROC::usage="PlotROC[dPrime,opts] creates a ROC plot for the given \!\(\*SuperscriptBox[\(d\), \(\[Prime]\)]\)"; *)
 
+
 Make2x2::usage="Make2x2[srmatrix,responses] creates a traditional 2x2 SDT matrix from a list of stimuli and responses (srmatrix) in the form {{stim,resp},{stim,resp}...}. The responses variable defaults to {\"yes\",\"no\"} and should contain the list of 2 possible responses if they are different from this. The resulting matrix contains rows for each stimulus class and columns for each response. The matrix is left unnormalized (counts only) by default and in the form {{hits,miss},{false alarm,correct rejections}}.";
 Normalize2x2::usage="Normalize is an option to Make2x2 that specifies that the results should be expressed in percentages rather than in raw results counts.";
+
 
 Design::usage="Option to SDT routines describing the experimental design. One of: YesNo, SameDifferent, ABX, TwoAFC, ThreeAFC, mAFC, Oddity.";
 HitsAndFalseAlarms::usage="HitsAndFalseAlarms[{{s,r},...}] calculates {h,f} for a given list of signal present / response {{s,r},...}.
 These can be specified by {1,0} or {True,False}";
 (* Options: ZeroCorrection\[Rule]True treats {0,0} as a 'hit' e.g., for non-true-SDT trials. Defaults to False";*)
 
+
 Sensitivity::usage="Sensitivity[h,f,opts], Sensitivity[matrix,opts] calculates sensitivity (q) for a given SDT matrix or h/f rate.";
 PercentCorrect::usage="PercentCorrect[h,f,opts], PercentCorrect[matrix,opts] calculates sensitivity in the form p(c) for a given SDT matrix or h/f rate.";
+
 
 (* Z::usage="Z[p] returns the quantile of p for a Gaussian distribution with \[Mu]=0, \[Sigma]=1."; *)
 
 (* ZListPlot::usage="ZPlot[list,opts] transformed plot, {x,z[y]}. Linear when y is the CDF of a Gaussian with \[Mu]=0, \[Sigma]=1.";
 ZZListPlot::usage="ZZPlot[list,opts] transformed plot, {z[x],z[y]}. Linear when x and y are the CDF of a Gaussian with \[Mu]=0, \[Sigma]=1.";
 *)
+
 
 YesNo::usage="Design of SDT task where the response is with respect to the stimulus: was it present?";
 SameDifferent::usage="Design of SDT task where the response is Same or Different stimulus after initial stimulus presentation.";
@@ -67,7 +87,9 @@ ABX::usage="SDT design where A and B are presented, then X is presented and resp
 Oddity::usage="SDT design that is odd.";
 ZeroCorrection::usage="Correct for {0,1}";
 
+
 Begin["`Private`"]
+
 
 (* internal stuff *)
 z[p_]:= Quantile[NormalDistribution[0,1],Re[p]];
@@ -79,14 +101,18 @@ toprop[m_?MatrixQ,opts___?OptionQ]:=Module[{n},
 		If[!FreeQ[#,{0,_}],{1/(2 n),1-(1/(2 n))},
 			If[!FreeQ[#,{_,0}],{1-(1/(2 n)),1/(2 n)},#/n],#/n])&,m]]
 
+
 (* Error messages *)
+
 
 SDT::unity="Hit and False-Alarm rates must be between 0 and 1";
 SDT::unity2="p(c) must be between 0 and 1";
 SDT::unity3="p must be between 0 and 1";
 SDT::baddsgn="Invalid or Unimplimented Design type \"`1`\"";
 
+
 Make2x2::badresp="The SR matrix does not contain responses from the list `1`.";
+
 
 (* Hits/fas *)
 Options[HitsAndFalseAlarms]={ZeroCorrection->False};
@@ -103,7 +129,7 @@ HitsAndFalseAlarms[m_?MatrixQ,opts___?OptionQ]:=Module[{bm,hits,fas,nS},
 	fas = Count[bm, {False, True}];
 	nS = Count[bm, {True, _}];
 	{hits/nS,fas/nS}]
-	
+
 
 (* p(c) *)
 Options[PercentCorrect]={Design->YesNo};
@@ -141,6 +167,7 @@ Sensitivity[m_?MatrixQ,opts___?OptionQ]:=Module[{design,h,f},
 	design=Design/.{opts}/.Options[Sensitivity];
 	{h,f}=HitsAndFalseAlarms[m,opts];
 	Sensitivity[h,f,opts]]
+
 
 (* d' *)
 Options[DPrime]={Design->YesNo};
@@ -180,6 +207,7 @@ DPrime[m_?MatrixQ,opts___?OptionQ]:=Module[{h,f},
 	{h,f}=HitsAndFalseAlarms[m,opts];
 	DPrime[h,f,opts]]
 
+
 (* log(a) *)
 Options[LogAlpha]={Design->YesNo};
 
@@ -201,8 +229,8 @@ LogAlpha[h_,f_,opts___?OptionQ]:=Module[{design},
 		_,Message[SDT::baddsgn,design]
 ]]
 
-(* criterion *)
 
+(* criterion *)
 Options[Criterion]={Design->YesNo};
 
 Criterion[h_Real,f_Real,opts___?OptionQ]:=Message[SDT::unity]/;h>1||f>1;
@@ -229,6 +257,7 @@ Criterion[m_?MatrixQ,opts___?OptionQ]:=Module[{design,dp,h,fa},
 
 	Return[-Sqrt[2]z[fa/2]-(dp/2)]
 ]
+
 
 (* ROC and Z plotting stuff *)
 Options[ROC]={Design->YesNo};
@@ -285,11 +314,14 @@ Make2x2[srmat_,resps_:{"yes","no"},opts___?OptionQ]:=Module[{res,poss,norm},
 	Return[res]
 ];
 
+
 (*
 Z[p_]:=Message[SDT::unity3]/;p>1||p<0;
 Z[p_]:=z[p]
 *)
 
+
 End[]
+
 
 EndPackage[]
