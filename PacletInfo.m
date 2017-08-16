@@ -4,7 +4,7 @@
 
 Paclet[
   Name -> "SDT",
-  Version -> "0.0.1",
+  Version -> "2.0.0",
   MathematicaVersion -> "6+",
   Extensions -> {
     {"Documentation", Language -> "English"}

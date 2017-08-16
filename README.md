@@ -1,8 +1,12 @@
 # SDT
 
+2.0
+
+![](logo.png)
+
 ---
 
-### Signal Detection methods for Mathemtica.
+### Signal Detection methods for _Mathemtica._
 
 This package is designed for doing signal detection theory calculations, based on work from:
 
@@ -30,5 +34,8 @@ Criterion @@ hf //N
 
 There are other methods and options for specifying designs, etc. I'll add more to the `SDT.nb` file soon.
 
+### License
+MIT
+
 ### More
-For more weird stuff, visit [my lab at http://www.skidmore.edu/~flip](http://www.skidmore.edu/~flip).
+For more potentially useful stuff, visit [my lab at www.skidmore.edu/~flip](https://www.skidmore.edu/~flip).
